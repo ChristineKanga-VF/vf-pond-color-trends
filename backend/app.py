@@ -4,7 +4,6 @@ import numpy as np
 from models import db, Pond_Color_Trends
 import base64
 import os
-from flask import send_file
 from datetime import datetime
 from config import Config
 
@@ -133,6 +132,7 @@ colors = [
     { "name":
  'Minted Glory 1', "code": '#00533F' },
     ]
+
 
 def hex_to_rgb(hex_color):
     #remove the '#' symbol from the input hex_color
