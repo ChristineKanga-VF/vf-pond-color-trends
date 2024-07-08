@@ -4,8 +4,6 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 
 export const Report = () => {
-  const apiUrl = process.env.REACT_APP_API_URL;
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
 
@@ -17,7 +15,7 @@ export const Report = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `${apiUrl}/submitted-data`
+          'https://vf-pond-color-trends.onrender.com/submitted-data'
         );
         setData(response.data);
       } catch (error) {

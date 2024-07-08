@@ -8,8 +8,7 @@ import useEyeDropper from "use-eye-dropper";
 import Swal from "sweetalert2";
 
 const ColorPicker = () => {
-  const apiUrl = process.env.REACT_APP_API_URL
-  ;
+
   // Initialize constants for image, timezone, ponds, categories, and time
   const timeZone = "Africa/Nairobi";
   const imageRef = useRef();
@@ -140,7 +139,7 @@ const ColorPicker = () => {
       };
 
       try {
-        const response = await fetch(`${apiUrl}/submit`, {
+        const response = await fetch('https://vf-pond-color-trends.onrender.com:5000/submit', {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -185,7 +184,7 @@ const ColorPicker = () => {
         setColor(result.sRGBHex);
 
         // Send color data to the backend
-        const response = await fetch(`${apiUrl}/match-color`, {
+        const response = await fetch('https://vf-pond-color-trends.onrender.com/match-color', {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
