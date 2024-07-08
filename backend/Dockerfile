@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     libatlas-base-dev
 
 # Upgrade pip
-RUN pip install --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
 
 # Copy requirements.txt and install Python dependencies
 COPY requirements.txt .
@@ -24,4 +24,5 @@ COPY . .
 EXPOSE 5000
 
 # Command to run the application
-CMD ["python", "app.py"]
+# CMD ["python", "app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
