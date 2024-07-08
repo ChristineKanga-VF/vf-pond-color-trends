@@ -4,6 +4,8 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 
 export const Report = () => {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
 
@@ -15,7 +17,7 @@ export const Report = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          "http://127.0.0.1:5000/submitted-data"
+          `${apiUrl}/submitted-data`
         );
         setData(response.data);
       } catch (error) {
