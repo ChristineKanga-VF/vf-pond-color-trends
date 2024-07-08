@@ -21,4 +21,4 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Command to run the application
-CMD ["gunicorn", "app:app"]
+CMD ["python", "app:app"]
