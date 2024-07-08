@@ -139,7 +139,7 @@ const ColorPicker = () => {
       };
 
       try {
-        const response = await fetch('https://vf-pond-color-trends.onrender.com:5000/submit', {
+        const response = await fetch('https://vf-pond-color-trends.onrender.com/submit', {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

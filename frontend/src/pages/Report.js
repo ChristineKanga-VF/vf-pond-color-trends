@@ -229,7 +229,7 @@ export const Report = () => {
             <div className="bg-white rounded-lg p-6 w-full max-w-lg">
               <div>
                 <img
-                  src={`http://localhost:5000/${modalContent.imageFilename}`}
+                  src={`https://vf-pond-color-trends.onrender.com/${modalContent.imageFilename}`}
                   alt={modalContent.imageFilename}
                   className="mt-4 w-full h-auto rounded-lg"
                 />
