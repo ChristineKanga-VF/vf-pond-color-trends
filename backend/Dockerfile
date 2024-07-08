@@ -15,10 +15,13 @@ RUN pip install --upgrade pip
 
 # Copy requirements.txt and install Python dependencies
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
 COPY . .
+
+# Expose port 5000
+EXPOSE 5000
 
 # Command to run the application
 CMD ["python", "app.py"]
