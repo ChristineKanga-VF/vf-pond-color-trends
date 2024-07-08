@@ -74,6 +74,7 @@ function Header() {
           {navigation.map((item) => (
             <DisclosureButton
               key={item.name}
+              as="a"
               href={item.href}
               className={`group text-black transition-all duration-300 ease-in-out block rounded-md px-2 py-2 text-base font-medium relative overflow-hidden ${
                 item.active ? "text-green-600 hover:text-black" : "text-black"
