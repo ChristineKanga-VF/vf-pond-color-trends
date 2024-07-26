@@ -65,10 +65,10 @@ export const Report = () => {
       const row = [item.category, item.pond];
       uniqueDates.forEach((date) => {
         if (item.date.startsWith(date)) {
-          // Push the closest color name for the corresponding date
+          // closest color name for the corresponding date
           row.push(item.closestColorName);
         } else {
-          row.push(""); // Push an empty string if the date doesn't match (optional, depends on your requirements)
+          row.push(""); 
         }
       });
       worksheetData.push(row);
@@ -78,10 +78,8 @@ export const Report = () => {
       skipHeader: true,
     });
 
-    // Append the worksheet to the workbook with the name "Pond Color"
     XLSX.utils.book_append_sheet(workbook, worksheet, "Pond Color");
 
-    // Generate an Excel file named "VF_Ponds_Color_Trends.xlsx"
     XLSX.writeFile(workbook, "VF_Ponds_Color_Trends.xlsx");
   };
 
