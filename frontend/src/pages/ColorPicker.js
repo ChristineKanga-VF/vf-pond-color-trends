@@ -204,11 +204,84 @@ const ColorPicker = () => {
         <Header />
         <main>
           <div className="min-h-screen flex items-center justify-center bg-white">
-            <div className="bg-transparent px-10 py-10 w-full">
+            <div className="border px-10 py-10 w-full">
               <form onSubmit={handleSubmit} className="p-4">
                 <div className="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-5">
                   {/* image div */}
-                  <div className="order-1 lg:col-span-3">
+                 
+                  {/* other div */}
+                  <div className="order-1 lg:col-span-2">
+                    <div className="mb-4">
+                      <label className="block py-2 text-sm font-medium text-black">
+                        Select Date and Time
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-black">
+                        Category
+                      </label>
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-black">
+                        Pond
+                      </label>
+                      <select
+                        value={pond}
+                        onChange={(e) => setPond(e.target.value)}
+                        className=" py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
+                      >
+                        {ponds.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+
+                      {closestColor && (
+                        <div ref={closestColorInputRef}>
+                          <label className="block mt-2 text-sm font-medium text-black">
+                            Color in Palette:
+                          </label>
+                          <div
+                            style={{ backgroundColor: closestColor.code }}
+                            className="py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
+                          >
+                            <p className="text-sm">
+                              <span className="p-2 text-white">
+                                {closestColor.name} ({closestColor.code})
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-md shadow-sm"
+                    >
+                      Submit
+                    </button>
+                  </div>
+                  <div className="order-2 lg:col-span-3">
                     <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
                       <div className="text-center">
                         {!image ? (
@@ -280,78 +353,6 @@ const ColorPicker = () => {
                     </div>
                   </div>
 
-                  {/* other div */}
-                  <div className="order-2 lg:col-span-2">
-                    <div className="mb-4">
-                      <label className="block py-2 text-sm font-medium text-black">
-                        Select Date and Time
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
-                      />
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-black">
-                        Category
-                      </label>
-                      <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className="py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
-                      >
-                        {categories.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-black">
-                        Pond
-                      </label>
-                      <select
-                        value={pond}
-                        onChange={(e) => setPond(e.target.value)}
-                        className=" py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
-                      >
-                        {ponds.map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </select>
-
-                      {closestColor && (
-                        <div ref={closestColorInputRef}>
-                          <label className="block mt-2 text-sm font-medium text-black">
-                            Color in Palette:
-                          </label>
-                          <div
-                            style={{ backgroundColor: closestColor.code }}
-                            className="py-1 px-2 mt-1 block w-full border border-gray-300 shadow-sm rounded-md"
-                          >
-                            <p className="text-sm">
-                              <span className="p-2 text-white">
-                                {closestColor.name} ({closestColor.code})
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-md shadow-sm"
-                    >
-                      Submit
-                    </button>
-                  </div>
                 </div>
               </form>
 
