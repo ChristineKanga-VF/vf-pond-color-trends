@@ -202,7 +202,8 @@ def submit():
 
 @app.route('/submitted-data', methods=['GET'])
 def get_submitted_data():
-    submitted_data = Pond_Color_Trends.query.all()
+   #  submitted_data = Pond_Color_Trends.query.all()
+    submitted_data = Pond_Color_Trends.query.order_by(Pond_Color_Trends.id.desc()).all()
     data = [{
         'id': item.id,
       #   'image': item.image,
@@ -211,7 +212,7 @@ def get_submitted_data():
         'closestColorName': item.closest_color_name,
         'category': item.category,
         'pond': item.pond,
-        'date': item.date.strftime('%Y-%m-%d %H:%M:%S')  # Format date as needed
+        'date': item.date.strftime('%Y-%m-%d %H:%M:%S') 
     } for item in submitted_data]
 
     return jsonify(data)
@@ -222,4 +223,4 @@ def serve_uploaded_file(filename):
 
 if __name__ == '__main__':
     app.run(debug=True)
-    app.run(host='0.0.0.0', port=5000)
+   #  app.run(host='0.0.0.0', port=5000)
