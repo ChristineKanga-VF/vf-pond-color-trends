@@ -2,37 +2,43 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import axios from "axios";
 import * as XLSX from "xlsx";
+import ReactPaginate from 'react-paginate';
 
 export const Report = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
 
   const [data, setData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(15);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);;
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
+          // 'https://colorpicker.victoryfarmskenya.com/backend/submitted-data'
           'https://vf-pond-color-trends.onrender.com/submitted-data'
+          // 'http://127.0.0.1:5000/submitted-data'
         );
         setData(response.data);
+        setTotalPages(Math.ceil(response.data.length / itemsPerPage));
+
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
 
     fetchData();
-  }, [currentPage, itemsPerPage]);
+  });
 
-  const nextPage = () => {
-    setCurrentPage((prevPage) => prevPage + 1);
-  };
+  const startIndex = currentPage * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const subset = data.slice(startIndex, endIndex);
 
-  const prevPage = () => {
-    setCurrentPage((prevPage) => prevPage - 1);
-  };
+  const handlePageChange = (selectedPage) => {
+    setCurrentPage(selectedPage.selected);
+};
 
   const openModal = (file) => {
     setModalContent(file);
@@ -133,18 +139,13 @@ export const Report = () => {
                   Pond
                 </th>
                 <th className="px-4 py-4 text-sm font-normal text-left text-black">
-                  Date
+                  Date & Time
                 </th>
                 <th className="py-4 px-4 text-sm font-normal text-left text-black"></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data
-                .slice(
-                  (currentPage - 1) * itemsPerPage,
-                  currentPage * itemsPerPage
-                )
-                .map((item, index) => (
+            {Array.isArray(subset) && subset.map((item, index) =>
                   <tr key={`${item.imageFilename}-${index}`}>
                     <td className="px-4 py-4 text-sm font-medium text-gray-700 whitespace-nowrap">
                       <div className="flex items-center gap-x-3">
@@ -217,7 +218,7 @@ export const Report = () => {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )}
             </tbody>
           </table>
         </div>
@@ -227,7 +228,10 @@ export const Report = () => {
             <div className="bg-white rounded-lg p-6 w-full max-w-lg">
               <div>
                 <img
+                  // src={`https://colorpicker.victoryfarmskenya.com/backend/${modalContent.imageFilename}`}
                   src={`https://vf-pond-color-trends.onrender.com/${modalContent.imageFilename}`}
+                  // src={`http://127.0.0.1:5000/${modalContent.imageFilename}`}
+                  
                   alt={modalContent.imageFilename}
                   className="mt-4 w-full h-auto rounded-lg"
                 />
@@ -261,72 +265,54 @@ export const Report = () => {
         )}
 
         <section className="lg:mx-10 mx-auto px-4">
-          <div className="mt-6 flex items-center justify-between">
-            <button
-              onClick={prevPage}
-              disabled={currentPage === 1}
-              className={`flex items-center gap-x-2 rounded-md border bg-white px-5 py-2 text-sm capitalize text-black transition-colors duration-200 ${
-                currentPage === 1
-                  ? "opacity-100 cursor-not-allowed"
-                  : "hover:bg-green-400 hover:text-white"
-              }`}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                class="size-6"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M11.03 3.97a.75.75 0 0 1 0 1.06l-6.22 6.22H21a.75.75 0 0 1 0 1.5H4.81l6.22 6.22a.75.75 0 1 1-1.06 1.06l-7.5-7.5a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <span>Previous </span>
-            </button>
+          <div className="mt-6 flex-direction items-center justify-between content-center">
 
-            <div className="hidden items-center gap-x-3 md:flex">
-              {[...Array(Math.ceil(data.length / itemsPerPage)).keys()].map(
-                (number) => (
-                  <button
-                    key={number}
-                    onClick={() => setCurrentPage(number + 1)}
-                    className={`rounded-md ${
-                      currentPage === number + 1
-                        ? "bg-green-100/60 px-2 py-1 text-sm text-black"
-                        : "px-2 py-1 text-sm text-black hover:bg-green-100/60"
-                    }`}
-                  >
-                    {number + 1}
+              <ReactPaginate
+                pageCount={totalPages}
+                onPageChange={handlePageChange}
+                breakLabel={"..."}
+                activeClassName={"active-page bg-green-100/60 px-2 py-1 text-sm text-black rounded-md"}
+                previousLabel={
+                  <button className="flex float-left items-center gap-x-2 rounded-md border bg-white px-5 py-2 text-sm capitalize text-black transition-colors duration-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="size-6"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M11.03 3.97a.75.75 0 0 1 0 1.06l-6.22 6.22H21a.75.75 0 0 1 0 1.5H4.81l6.22 6.22a.75.75 0 1 1-1.06 1.06l-7.5-7.5a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>Previous</span>
                   </button>
-                )
-              )}
-            </div>
+                }
+                nextLabel={
+                  <button className="flex float-right items-center gap-x-2 rounded-md border bg-white px-5 py-2 text-sm capitalize text-black transition-colors duration-200">
+                    <span>Next</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="size-6"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                }
+                containerClassName={"flex justify-between items-center gap-x-3"}
+                pageLinkClassName={"rounded-md px-2 py-1 text-sm text-black hover:bg-green-100/60"}
+                breakLinkClassName={"rounded-md px-2 py-1 text-sm text-black"}
+                disabledClassName={"cursor-not-allowed opacity-50"}
+              />
 
-            <button
-              onClick={nextPage}
-              disabled={data.length < itemsPerPage || data.length === 0}
-              className={`flex items-center gap-x-2 rounded-md border bg-white px-5 py-2 text-sm capitalize text-black transition-colors duration-200 ${
-                currentPage * itemsPerPage >= data.length
-                  ? "opacity-100 cursor-not-allowed"
-                  : "hover:bg-green-400 hover:text-white"
-              }`}
-            >
-              <span> Next </span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                class="size-6"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
+
           </div>
         </section>
       </section>

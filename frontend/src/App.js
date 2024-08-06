@@ -6,12 +6,14 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<ColorPicker />} />
-        <Route path="/report" element={<Report />} />
-      </Routes>
-    </Router>
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<ColorPicker />} />
+          <Route path="/report" element={<Report />} />
+        </Routes>
+      </Router>
+    </>
   );
 }
 

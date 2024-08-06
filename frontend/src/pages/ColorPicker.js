@@ -11,7 +11,7 @@ const ColorPicker = () => {
 
   // Initialize constants for image, timezone, ponds, categories, and time
   const timeZone = "Africa/Nairobi";
-  const imageRef = useRef();
+  const imageRef = useRef(null);
   const now = new Date();
   // Convert current time to Nairobi time
   const initialDate = toZonedTime(now, timeZone);
@@ -92,10 +92,12 @@ const ColorPicker = () => {
   const ImageUpload = () => {
     const [image, setImage] = useState(null);
     const [imageFilename, setImageFilename] = useState("");
+    const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef(null);
     
     const handleImageUpload = (event) => {
       const reader = new FileReader();
+
       const file = event.target.files[0];
       reader.onload = (e) => {
         setImage(e.target.result);
@@ -139,7 +141,9 @@ const ColorPicker = () => {
       };
 
       try {
+        // const response = await fetch('https://colorpicker.victoryfarmskenya.com/backend/submit', {
         const response = await fetch('https://vf-pond-color-trends.onrender.com/submit', {
+        // const response = await fetch('/backend/submit', {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -183,21 +187,50 @@ const ColorPicker = () => {
         const result = await open();
         setColor(result.sRGBHex);
 
-        // Send color data to the backend
-        const response = await fetch('https://vf-pond-color-trends.onrender.com/match-color', {
+        // const response = await fetch('https://colorpicker.victoryfarmskenya.com/backend/match-color', {
+          const response = await fetch('https://vf-pond-color-trends.onrender.com/match-color', {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ sRGBHex: result.sRGBHex }),
         });
-
+      
         const data = await response.json();
         setClosestColor(data);
       } catch (e) {
         console.error(e);
       }
     }, [setColor, setClosestColor]);
+
+    const handleFile = (file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage(e.target.result);
+        setImageFilename(file.name);
+      };
+
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+    };
+
+    const handleDragOver = (event) => {
+      event.preventDefault();
+      setDragging(true);
+    };
+
+    const handleDragLeave = () => {
+      setDragging(false);
+    };
+
+    const handleDrop = (event) => {
+      event.preventDefault();
+      setDragging(false);
+
+      const file = event.dataTransfer.files[0];
+      handleFile(file);
+    };
 
     return (
       <div className="">
@@ -207,7 +240,7 @@ const ColorPicker = () => {
             <div className="border px-10 py-10 w-full">
               <form onSubmit={handleSubmit} className="p-4">
                 <div className="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-5">
-                  {/* image div */}
+                  
                  
                   {/* other div */}
                   <div className="order-1 lg:col-span-2">
@@ -281,8 +314,16 @@ const ColorPicker = () => {
                       Submit
                     </button>
                   </div>
+                  {/* image div */}
                   <div className="order-2 lg:col-span-3">
-                    <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+                    <div
+                      className={`mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 ${
+                        dragging ? "bg-gray-100" : ""
+                      }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
                       <div className="text-center">
                         {!image ? (
                           <>
@@ -298,7 +339,8 @@ const ColorPicker = () => {
                                 <span>Upload a file</span>
                                 <input
                                   id="image"
-                                  name="image/*"
+                                  name="image"
+                                  accept="image/*"
                                   type="file"
                                   onChange={handleImageUpload}
                                   className="sr-only"

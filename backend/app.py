@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 from models import db, Pond_Color_Trends
 import base64
@@ -11,9 +12,6 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 app.config.from_object(Config)
 db.init_app(app)
-
-with app.app_context():
-    db.create_all()
 
 # Color palette
 colors = [
@@ -223,4 +221,4 @@ def serve_uploaded_file(filename):
 
 if __name__ == '__main__':
     app.run(debug=True)
-   #  app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000)
