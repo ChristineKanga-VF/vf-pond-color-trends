@@ -1,17 +1,23 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import numpy as np
-from models import db, Pond_Color_Trends
+from models import db, Pond_Color_Trends, User
 import base64
 import os
 from datetime import datetime
 from config import Config
+from flask_caching import Cache
+from flask import make_response
+from werkzeug.security import check_password_hash, generate_password_hash
+import jwt
+import datetime
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config.from_object(Config)
 db.init_app(app)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 # Color palette
 colors = [
@@ -131,7 +137,46 @@ colors = [
  'Minted Glory 1', "code": '#00533F' },
     ]
 
+@app.route('/create_user', methods=['POST'])
+def create_user():
+    data = request.json
+    email = data['email']
+    password = generate_password_hash(data['password'])
+    
+    # Check if user with the same email already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({"message": "User with this email already exists."}), 400
+    
+    new_user = User(email=email, password=password)
+    db.session.add(new_user)
+    db.session.commit()
+    
+    return jsonify({"message": "User created successfully!"}), 201
 
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    user = User.query.filter_by(email=email).first()
+
+    if user and check_password_hash(user.password, password):
+        token = jwt.encode({
+            'user_id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        }, app.config['SECRET_KEY'], algorithm='HS256')
+
+        return jsonify({'token': token})
+
+    return jsonify({'message': 'Invalid credentials'}), 401
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.pop('user_id', None)
+    return jsonify({"message": "Logout successful!"}), 200
+    
 def hex_to_rgb(hex_color):
     #remove the '#' symbol from the input hex_color
     hex_color = hex_color.lstrip('#')
@@ -176,29 +221,31 @@ def submit():
     try:
         # Save the image
         image_data = data['image'].split(",")[1]
-        image_filename=data['imageFilename']
+        image_filename = data['imageFilename']
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
         with open(image_path, "wb") as f:
             f.write(base64.b64decode(image_data))
 
-        # Save the record in the database
-        pond_image = Pond_Color_Trends(
-            image_filename=image_filename,
-            closest_color_name=data['closestColor']['name'],
-            closest_color_code=data['closestColor']['code'],
-            category=data['category'],
-            pond=data['pond'],
-            date=datetime.strptime(data['date'], '%a %b %d %Y %H:%M:%S GMT%z (East Africa Time)')
-        )
-        db.session.add(pond_image)
+        # Save each record in the database
+        for selection in data['selections']:
+            pond_image = Pond_Color_Trends(
+                image_filename=image_filename,
+                closest_color_name=selection.get('closestColor', {}).get('name', ''),
+                closest_color_code=selection.get('closestColor', {}).get('code', ''),
+                category=selection.get('category', ''),
+                pond=selection.get('pond', ''),
+                date=datetime.strptime(data['date'], '%a %b %d %Y %H:%M:%S GMT%z (East Africa Time)')
+            )
+            db.session.add(pond_image)
+
         db.session.commit()
-        
 
         return jsonify({"message": "Data saved successfully"}), 200
     except Exception as e:
         return jsonify({"message": f"An error occurred: {str(e)}"}), 500
 
 @app.route('/submitted-data', methods=['GET'])
+@cache.cached(timeout=60)
 def get_submitted_data():
    #  submitted_data = Pond_Color_Trends.query.all()
     submitted_data = Pond_Color_Trends.query.order_by(Pond_Color_Trends.id.desc()).all()
@@ -212,13 +259,32 @@ def get_submitted_data():
         'pond': item.pond,
         'date': item.date.strftime('%Y-%m-%d %H:%M:%S') 
     } for item in submitted_data]
+    
+    response = make_response(jsonify(data))
+    response.headers['Cache-Control'] = 'public, max-age=60'
+    return response
+ 
 
-    return jsonify(data)
+@app.route('/delete-data/<int:id>', methods=['DELETE'])
+def delete_data(id):
+    try: 
+        record = Pond_Color_Trends.query.get(id)
+        if record is None:
+            return make_response(jsonify({'error': 'Record not found'}), 404)
+
+        db.session.delete(record)
+        db.session.commit()
+
+        return make_response(jsonify({'message': 'Record deleted successfully'}), 200)
+    
+    except Exception as e:
+        db.session.rollback()
+        return make_response(jsonify({'error': str(e)}), 500)
+
 
 @app.route('/<path:filename>')
 def serve_uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

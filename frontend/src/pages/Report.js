@@ -3,6 +3,8 @@ import Header from "../components/Header";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import ReactPaginate from 'react-paginate';
+import _ from 'lodash';
+import Swal from "sweetalert2";
 
 export const Report = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -11,26 +13,24 @@ export const Report = () => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);;
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(20);
+
+  const fetchData = _.debounce(async () => {
+    try {
+      const response = await axios.get('https://colorpicker.victoryfarmskenya.com/backend/submitted-data');
+      setData(response.data);
+      setTotalPages(Math.ceil(response.data.length / itemsPerPage));
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }, 300); 
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(
-          // 'https://colorpicker.victoryfarmskenya.com/backend/submitted-data'
-          'https://vf-pond-color-trends.onrender.com/submitted-data'
-          // 'http://127.0.0.1:5000/submitted-data'
-        );
-        setData(response.data);
-        setTotalPages(Math.ceil(response.data.length / itemsPerPage));
-
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
     fetchData();
-  });
+    return () => {
+      fetchData.cancel();
+    };
+  }, [fetchData]);
 
   const startIndex = currentPage * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -49,10 +49,10 @@ export const Report = () => {
     const workbook = XLSX.utils.book_new();
     const worksheetData = [];
     const headers = ["Category", "Pond"];
-    // Extract unique dates from the data
+    
     const uniqueDates = [
       ...new Set(data.map((item) => item.date.split(" ")[0])),
-    ];
+    ].sort((a, b) => new Date(a) - new Date(b));
 
     uniqueDates.forEach((date) => {
       headers.push({
@@ -64,42 +64,92 @@ export const Report = () => {
         s: { font: { bold: true } },
       });
     });
-
+  
     worksheetData.push(headers);
-
+  
+    // Create a map to aggregate data by category and pond
+    const aggregatedData = new Map();
+  
     data.forEach((item) => {
-      const row = [item.category, item.pond];
+      const key = `${item.category}-${item.pond}`;
+      if (!aggregatedData.has(key)) {
+        aggregatedData.set(key, {
+          category: item.category,
+          pond: item.pond,
+          dateData: {},
+        });
+      }
+      const entry = aggregatedData.get(key);
+      const dateKey = item.date.split(" ")[0];
+      entry.dateData[dateKey] = item.closestColorName;
+    });
+  
+    aggregatedData.forEach((value) => {
+      const row = [value.category, value.pond];
       uniqueDates.forEach((date) => {
-        if (item.date.startsWith(date)) {
-          // closest color name for the corresponding date
-          row.push(item.closestColorName);
-        } else {
-          row.push(""); 
-        }
+        row.push(value.dateData[date] || "");
       });
       worksheetData.push(row);
     });
-
+  
     const worksheet = XLSX.utils.json_to_sheet(worksheetData, {
       skipHeader: true,
     });
-
+  
     XLSX.utils.book_append_sheet(workbook, worksheet, "Pond Color");
-
+  
     XLSX.writeFile(workbook, "VF_Ponds_Color_Trends.xlsx");
   };
+  
+  
+
+  const handleDelete = async (item) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`https://colorpicker.victoryfarmskenya.com/backend/delete-data/${item.id}`);
+
+          setData((prevData) => prevData.filter((record) => record.id !== item.id));
+        
+          fetchData.cancel();
+          fetchData.flush();
+
+          Swal.fire({
+            title: "Deleted!",
+            text: "Your file has been deleted.",
+            icon: "success"
+          });
+        } catch (error) {
+          Swal.fire({
+            title: "Error!",
+            text: "An error occurred while deleting the record.", error,
+            icon: "error"
+          });
+        }
+      }
+    });
+  };
+
 
   return (
-    <div className="container mx-auto px-4 py-2">
+    <div className="overscroll-none py-2">
       <Header />
 
-      <section className="overflow-x-auto">
+      <section className="px-4">
         <div className="lg:mx-10 sm:flex sm:items-center sm:justify-between">
           <h2 className="text-lg font-medium px-3 text-black mb-2">
-            Pond Color Trends
+           
           </h2>
 
-          <div className="flex items-center mt-2 mb-4 gap-x-3 lg:float-right">
+          <div className="flex items-center px-8 mt-2 mb-4 gap-x-3 lg:float-right">
             <button
               onClick={exportToExcel}
               className="w-full sm:w-auto flex items-center justify-center px-5 py-2 text-sm tracking-wide text-white transition-colors duration-200 bg-green-600 rounded-lg gap-x-2 hover:bg-green-500"
@@ -216,6 +266,17 @@ export const Report = () => {
                           />
                         </svg>
                       </button>
+
+                      <button
+                      onClick={() => handleDelete(item)}
+                        className="text-red transition-colors float-right duration-200 hover:text-red-500 focus:outline-none"
+                      >
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+  <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
+</svg>
+
+
+                      </button>
                     </td>
                   </tr>
                 )}
@@ -228,9 +289,8 @@ export const Report = () => {
             <div className="bg-white rounded-lg p-6 w-full max-w-lg">
               <div>
                 <img
-                  // src={`https://colorpicker.victoryfarmskenya.com/backend/${modalContent.imageFilename}`}
-                  src={`https://vf-pond-color-trends.onrender.com/${modalContent.imageFilename}`}
-                  // src={`http://127.0.0.1:5000/${modalContent.imageFilename}`}
+                  src={`https://colorpicker.victoryfarmskenya.com/backend/${modalContent.imageFilename}`}
+                  
                   
                   alt={modalContent.imageFilename}
                   className="mt-4 w-full h-auto rounded-lg"
@@ -316,6 +376,6 @@ export const Report = () => {
           </div>
         </section>
       </section>
-    </div>
+      </div>
   );
 };

@@ -11,16 +11,38 @@ function Header() {
   const location = useLocation();
 
   const navigation = [
-    { name: "Color Picker", href: "/", active: location.pathname === "/" },
+    { name: "Color Picker", href: "/color-picker", active: location.pathname === "/" },
     {
       name: "Color Trends",
       href: "/report",
       active: location.pathname === "/report",
     },
   ];
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("https://colorpicker.victoryfarmskenya.com/backend/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        alert("Logout successful!");
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      } else {
+        alert("Logout failed");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred. Please try again later.");
+    }
+  };
   return (
     <Disclosure as="nav" className="bg-white">
-      <div className="mx-auto max-w-7xl px-2 mt-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-2 mt-4 border-b sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
             {/* Mobile menu button*/}
@@ -45,7 +67,7 @@ function Header() {
                 className="h-10 w-auto"
               />
             </div>
-            <div className="hidden sm:ml-6 sm:block">
+            <div className="hidden sm:ml-6 sm:block flex-grow">
               <div className="flex space-x-4">
                 {navigation.map((item) => (
                   <a
@@ -64,6 +86,19 @@ function Header() {
                   </a>
                 ))}
               </div>
+            </div>
+            <div className="hidden sm:block">
+            <button
+  onClick={handleLogout}
+  className="ml-auto flex items-center space-x-2 text-red-600 px-6 py-2 rounded-lg text-sm font-medium hover:ring-1 hover:ring-red-600"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+    <path fillRule="evenodd" d="M17 4.25A2.25 2.25 0 0 0 14.75 2h-5.5A2.25 2.25 0 0 0 7 4.25v2a.75.75 0 0 0 1.5 0v-2a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v11.5a.75.75 0 0 1-.75.75h-5.5a.75.75 0 0 1-.75-.75v-2a.75.75 0 0 0-1.5 0v2A2.25 2.25 0 0 0 9.25 18h5.5A2.25 2.25 0 0 0 17 15.75V4.25Z" clipRule="evenodd" />
+    <path fillRule="evenodd" d="M14 10a.75.75 0 0 0-.75-.75H3.704l1.048-.943a.75.75 0 1 0-1.004-1.114l-2.5 2.25a.75.75 0 0 0 0 1.114l2.5 2.25a.75.75 0 1 0 1.004-1.114l-1.048-.943h9.546A.75.75 0 0 0 14 10Z" clipRule="evenodd" />
+  </svg>
+  <span>Logout</span>
+</button>
+
             </div>
           </div>
         </div>
@@ -86,6 +121,12 @@ function Header() {
               {item.name}
             </DisclosureButton>
           ))}
+          <DisclosureButton
+            onClick={handleLogout}
+            className="block w-full text-left text-red-600 px-3 py-2 rounded-md text-sm font-medium hover:ring-red-600"
+          >
+            Logout
+          </DisclosureButton>
         </div>
       </DisclosurePanel>
     </Disclosure>
